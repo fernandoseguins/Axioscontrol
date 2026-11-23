@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#111214">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DUON 24">
+  <title>AXIOS DUON 24</title>
+  <meta name="description" content="Controle remoto do mixer digital AXIOS DUON 24">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/mixer" aria-label="Início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18M12 3v18M19 3v18" /><rect x="2.5" y="12" width="5" height="3" rx="1" /><rect x="9.5" y="6" width="5" height="3" rx="1" /><rect x="16.5" y="14" width="5" height="3" rx="1" /></svg>
+      <span><b>AXIOS</b> <span id="devname">DUON 24</span></span>
+    </a>
+    <nav id="nav" aria-label="Telas">
+      <a href="#/mixer" data-r="mixer">Mixer</a>
+      <a href="#/canal/ch/0" data-r="canal">Canal</a>
+      <a href="#/fx" data-r="fx">Efeitos</a>
+      <a href="#/cenas" data-r="cenas">Cenas</a>
+      <a href="#/rotas" data-r="rotas">Rotas</a>
+      <a href="#/ferramentas" data-r="ferramentas">Ferramentas</a>
+      <a href="#/sistema" data-r="sistema">Sistema</a>
+      <a href="#/musico" data-r="musico" class="mus-link">🎧 Músico</a>
+    </nav>
+    <span id="status" class="conn" data-state="ok">Modo demo</span>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <noscript>Ative o JavaScript para usar o app.</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
