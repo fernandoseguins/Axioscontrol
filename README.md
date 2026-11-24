@@ -12,7 +12,7 @@ Foi inspirado no app do AXIOS 32 (`AX32 .25.12.30.03.APP`) e pode ser instalado 
 | Tela | O que faz |
 |---|---|
 | **Mixer** | 24 canais em 2 camadas, retornos de FX, masters AUX, DCA; fader, pan, mute, solo, medidores; *sends on faders* (os faders passam a controlar o envio para um AUX ou FX); botões de mute group |
-| **Canal** | Nome e cor, ganho, +48V, fase, link estéreo (1-2, 3-4…), HPF, EQ paramétrico de 4 bandas com curva, gate, compressor com curva, envios AUX (pre/post) e FX, atribuição a DCA e mute groups |
+| **Canal** | Nome e cor, ganho, +48V, fase, link estéreo (1-2, 3-4…), HPF, EQ paramétrico de 4 bandas com curva e **analisador de espectro ao vivo** (antes e depois do EQ), gate, compressor com curva, envios AUX (pre/post) e FX, atribuição a DCA e mute groups |
 | **AUX / DCA / MAIN** | Master e EQ gráfico de 15 bandas (AUX e MAIN), canais de cada DCA, nomes dos mute groups, **permissões do Modo Músico** |
 | **Efeitos** | 4 processadores: Reverb Hall/Plate/Room/Vocal/Gate, Delay, Tap Delay (botão TAP), Echo, Chorus, Flanger, Phaser, Tremolo, Pitch, Vocal Doubler, Distortion; retorno no MAIN e nos AUX |
 | **Cenas** | 30 cenas: salvar, chamar, renomear, apagar, exportar/importar (.json), travar cenas |

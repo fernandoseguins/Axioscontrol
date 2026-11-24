@@ -2,7 +2,8 @@ import { get, set, watch, onCleanup, CFG, COLORS, GEQ_FREQS, partner } from '../
 import { h, vslider, hslider, knob, tbtn, selectBox, textInput, card, meter, levelToMeter, toast } from '../ui.js';
 import { chIn, chPost, auxOut, mainOut } from '../levels.js';
 import { fmtPan } from './mixer.js';
-import { eqCurve } from '../eq.js';
+import { drawEq } from '../eq.js';
+import { chSpectrum } from '../spectrum.js';
 
 const KINDS = [['ch', 'Canais'], ['aux', 'AUX'], ['dca', 'DCA'], ['main', 'MAIN']];
 const COUNT = { ch: CFG.CH, aux: CFG.AUX, dca: CFG.DCA, main: 1 };
@@ -112,14 +113,39 @@ function channelCards(body, i) {
   );
 }
 
+const SPEC_KEY = 'duon24.eqSpec';
+const specOn = () => { try { return localStorage.getItem(SPEC_KEY) !== '0'; } catch { return true; } };
+
 function eqCard(p) {
-  const cv = h('canvas', { class: 'eq-cv', height: 160 });
-  const draw = () => eqCurve(cv, get(`${p}.eq`), get(`${p}.hpf`));
-  watch([`${p}.eq`, `${p}.hpf`], draw);
-  requestAnimationFrame(draw);
-  const ro = new ResizeObserver(draw);
+  const i = +p.split('.')[1];
+  const cv = h('canvas', { class: 'eq-cv' });
+  let showSpec = specOn();
+  const draw = () => drawEq(cv, get(`${p}.eq`), get(`${p}.hpf`), showSpec ? chSpectrum(i) : null);
+  // Com o espectro ligado o gráfico anima (~30 fps); desligado, só redesenha quando o EQ muda.
+  let raf = 0, last = 0;
+  const loop = (t) => {
+    raf = requestAnimationFrame(loop);
+    if (t - last < 33 || document.hidden || !cv.isConnected) return;
+    last = t;
+    draw();
+  };
+  const start = () => { cancelAnimationFrame(raf); if (showSpec) raf = requestAnimationFrame(loop); else requestAnimationFrame(draw); };
+  watch([`${p}.eq`, `${p}.hpf`], () => { if (!showSpec) draw(); });
+  start();
+  onCleanup(() => cancelAnimationFrame(raf));
+  const ro = new ResizeObserver(() => draw());
   ro.observe(cv);
   onCleanup(() => ro.disconnect());
+
+  const specBtn = h('button', { class: 'tb sm spec' + (showSpec ? ' on' : ''), 'aria-pressed': String(showSpec), onclick: () => {
+    showSpec = !showSpec;
+    try { localStorage.setItem(SPEC_KEY, showSpec ? '1' : '0'); } catch { /* ignore */ }
+    specBtn.classList.toggle('on', showSpec);
+    specBtn.setAttribute('aria-pressed', String(showSpec));
+    start();
+  } }, 'Espectro');
+  const legend = h('div', { class: 'eq-legend' },
+    h('span', { class: 'lg pre' }, 'Antes do EQ'), h('span', { class: 'lg post' }, 'Depois do EQ'), h('span', { class: 'lg curve' }, 'Curva do EQ'));
 
   const TYPES = [['lshelf', 'Low shelf'], ['peak', 'Peak'], ['hshelf', 'High shelf']];
   const bands = [0, 1, 2, 3].map((b) => {
@@ -133,8 +159,9 @@ function eqCard(p) {
   });
   return card('Equalizador',
     h('div', { class: 'row' }, tbtn(`${p}.eq.on`, 'EQ'),
-      h('button', { class: 'btn sm', onclick: () => [0, 1, 2, 3].forEach((b) => set(`${p}.eq.bands.${b}.gain`, 0)) }, 'Zerar')),
-    cv, h('div', { class: 'bands' }, bands));
+      h('button', { class: 'btn sm', onclick: () => [0, 1, 2, 3].forEach((b) => set(`${p}.eq.bands.${b}.gain`, 0)) }, 'Zerar'),
+      specBtn),
+    cv, legend, h('div', { class: 'bands' }, bands));
 }
 
 function compCurve(p) {

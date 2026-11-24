@@ -11,6 +11,7 @@
   --solo: #ffc53d;
   --fx: #8e7cf0;
   --dca: #3fb5a8;
+  --spec: #4cc3ff;
   --ok: #46a758;
   --warn: #ffb224;
   --r: 10px;
@@ -210,7 +211,13 @@ details.more summary { cursor: pointer; color: var(--muted); font-weight: 600; p
 .mg-bar .tb { white-space: nowrap; }
 
 /* ---------- canal ---------- */
-.eq-cv { width: 100%; height: 160px; background: var(--bg); border-radius: 8px; display: block; }
+.eq-cv { width: 100%; height: 220px; background: radial-gradient(120% 90% at 50% 100%, #12161c, var(--bg)); border-radius: 8px; display: block; }
+.tb.spec.on { background: var(--spec); border-color: var(--spec); color: #00131d; }
+.eq-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin-top: -4px; }
+.lg::before { content: ''; display: inline-block; width: 14px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.lg.pre::before { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.35); }
+.lg.post::before { background: linear-gradient(var(--spec), color-mix(in srgb, var(--spec) 20%, transparent)); }
+.lg.curve::before { height: 3px; background: var(--accent); }
 .comp-cv { width: 120px; height: 120px; background: var(--bg); border-radius: 8px; }
 .rta-cv { width: 100%; height: 260px; background: var(--bg); border-radius: 8px; display: block; }
 .bands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -289,5 +296,6 @@ details.more summary { cursor: pointer; color: var(--muted); font-weight: 600; p
   .bands { grid-template-columns: repeat(2, 1fr); }
   .sr-name { width: 72px; }
   .fblock { height: 260px; }
+  .eq-cv { height: 190px; }
 }
 @media (prefers-reduced-motion: reduce) { .solo-ind.show { animation: none; } #toast { transition: none; } }
