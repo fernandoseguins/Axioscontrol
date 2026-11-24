@@ -1,0 +1,42 @@
+# Configuração do Netlify para o app AXIOS DUON 24.
+# O app é estático (HTML/CSS/JS puro): não há etapa de build.
+
+[build]
+  publish = "."
+  command = ""
+
+# Service worker: o navegador sempre confere se há versão nova,
+# para os celulares receberem as atualizações do app na hora.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "no-cache"
+
+# Ícones mudam pouco: cache de 1 semana.
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+# Cabeçalhos de segurança para todo o site.
+# O microfone fica liberado só para o próprio app (RTA na tela Ferramentas).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "microphone=(self), camera=(), geolocation=()"
+

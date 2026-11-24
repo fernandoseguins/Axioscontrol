@@ -43,7 +43,9 @@ python3 -m http.server 8080
 # depois abra http://localhost:8080
 ```
 
-Para usar em outros aparelhos, publique a pasta em qualquer hospedagem estática (GitHub Pages, Netlify, etc.).
+Para usar em outros aparelhos, publique no **Netlify**: o `netlify.toml` já está pronto (sem build, pasta publicada = raiz
+do projeto, cache certo para o service worker e microfone liberado para o RTA). Ligue o repositório em
+*Add new site → Import an existing project* ou arraste a pasta em *Deploy manually*.
 A instalação como app e o microfone do RTA exigem **HTTPS** (ou `localhost`).
 Depois do primeiro acesso, o app abre mesmo sem internet.
 
