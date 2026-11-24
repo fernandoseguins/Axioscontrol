@@ -42,8 +42,23 @@ function response(eq, hpf) {
 const SPEC_MIN = -90; // faixa do analisador: -90..0 dBFS (escala própria, à direita)
 const R = 18; // faixa da curva do EQ: ±18 dB
 
-/** Desenha o gráfico. spec = espectro de entrada (dBFS) ou null para só a curva. */
-export function drawEq(cv, eq, hpf, spec) {
+/** Conversões entre pixels e frequência/ganho do gráfico (W×H em px CSS). */
+export function eqGeom(W, H) {
+  return {
+    fx: (f) => (Math.log10(f / 20) / 3) * W,
+    xf: (x) => 20 * Math.pow(1000, x / W),
+    fy: (db) => H / 2 - (Math.max(-R, Math.min(R, db)) / R) * (H / 2 - 8),
+    yd: (y) => ((H / 2 - y) / (H / 2 - 8)) * R,
+  };
+}
+
+const fmtF = (f) => (f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 1 : 2).replace(/\.?0+$/, '') + ' kHz' : Math.round(f) + ' Hz');
+
+/**
+ * Desenha o gráfico. spec = espectro de entrada (dBFS) ou null para só a curva.
+ * sel = banda em destaque (sendo arrastada), hover = banda sob o mouse.
+ */
+export function drawEq(cv, eq, hpf, spec, { sel = -1, hover = -1 } = {}) {
   const dpr = devicePixelRatio || 1;
   const W = cv.clientWidth || 300, H = cv.clientHeight || 200;
   if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
@@ -53,8 +68,7 @@ export function drawEq(cv, eq, hpf, spec) {
   const css = getComputedStyle(document.documentElement);
   const v = (n) => css.getPropertyValue(n).trim();
   const line = v('--line'), muted = v('--muted'), acc = v('--accent'), specC = v('--spec');
-  const fx = (f) => (Math.log10(f / 20) / 3) * W;
-  const fy = (db) => H / 2 - (db / R) * (H / 2 - 8);
+  const { fx, fy } = eqGeom(W, H);
   const sy = (db) => H - ((Math.max(SPEC_MIN, Math.min(0, db)) - SPEC_MIN) / -SPEC_MIN) * (H - 4);
   const resp = response(eq, hpf);
   const active = eq.on || hpf?.on;
@@ -124,14 +138,36 @@ export function drawEq(cv, eq, hpf, spec) {
   g.stroke(c);
   g.shadowBlur = 0;
   if (eq.on) eq.bands.forEach((b, i) => {
-    const x = fx(b.freq), y = fy(Math.max(-R, Math.min(R, b.gain)));
-    g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2);
-    g.fillStyle = acc; g.fill();
+    const x = fx(b.freq), y = fy(b.gain);
+    const big = i === sel || i === hover;
+    if (big) {
+      g.beginPath(); g.arc(x, y, 16, 0, Math.PI * 2);
+      g.fillStyle = hexA(acc, i === sel ? 0.28 : 0.16); g.fill();
+    }
+    g.beginPath(); g.arc(x, y, big ? 9 : 7, 0, Math.PI * 2);
+    g.fillStyle = i === sel ? '#fff' : acc; g.fill();
     g.strokeStyle = '#000'; g.lineWidth = 1.5; g.stroke();
-    g.fillStyle = '#1a0f00'; g.font = 'bold 9px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#1a0f00'; g.font = `bold ${big ? 10 : 9}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(i + 1, x, y + 0.5);
     g.textAlign = 'start'; g.textBaseline = 'alphabetic';
   });
+
+  // etiqueta com os valores da banda arrastada
+  const show = sel >= 0 ? sel : hover;
+  if (eq.on && show >= 0) {
+    const b = eq.bands[show];
+    const txt = `${fmtF(b.freq)}  ${b.gain > 0 ? '+' : ''}${b.gain.toFixed(1)} dB  Q ${b.q.toFixed(1)}`;
+    g.font = '600 11px system-ui';
+    const tw = g.measureText(txt).width + 14;
+    let x = fx(b.freq) - tw / 2, y = fy(b.gain) - 40;
+    if (y < 4) y = fy(b.gain) + 22;
+    x = Math.max(4, Math.min(W - tw - 4, x));
+    g.fillStyle = 'rgba(10,11,13,0.9)'; g.strokeStyle = hexA(acc, 0.8); g.lineWidth = 1;
+    g.beginPath(); g.roundRect(x, y, tw, 22, 6); g.fill(); g.stroke();
+    g.fillStyle = '#fff'; g.textBaseline = 'middle';
+    g.fillText(txt, x + 7, y + 11.5);
+    g.textBaseline = 'alphabetic';
+  }
 }
 
 function hexA(color, a) {

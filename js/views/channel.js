@@ -2,7 +2,7 @@ import { get, set, watch, onCleanup, CFG, COLORS, GEQ_FREQS, partner } from '../
 import { h, vslider, hslider, knob, tbtn, selectBox, textInput, card, meter, levelToMeter, toast } from '../ui.js';
 import { chIn, chPost, auxOut, mainOut } from '../levels.js';
 import { fmtPan } from './mixer.js';
-import { drawEq } from '../eq.js';
+import { drawEq, eqGeom } from '../eq.js';
 import { chSpectrum } from '../spectrum.js';
 
 const KINDS = [['ch', 'Canais'], ['aux', 'AUX'], ['dca', 'DCA'], ['main', 'MAIN']];
@@ -120,7 +120,8 @@ function eqCard(p) {
   const i = +p.split('.')[1];
   const cv = h('canvas', { class: 'eq-cv' });
   let showSpec = specOn();
-  const draw = () => drawEq(cv, get(`${p}.eq`), get(`${p}.hpf`), showSpec ? chSpectrum(i) : null);
+  let sel = -1, hover = -1;
+  const draw = () => drawEq(cv, get(`${p}.eq`), get(`${p}.hpf`), showSpec ? chSpectrum(i) : null, { sel, hover });
   // Com o espectro ligado o gráfico anima (~30 fps); desligado, só redesenha quando o EQ muda.
   let raf = 0, last = 0;
   const loop = (t) => {
@@ -136,6 +137,11 @@ function eqCard(p) {
   const ro = new ResizeObserver(() => draw());
   ro.observe(cv);
   onCleanup(() => ro.disconnect());
+
+  dragBands(cv, p, {
+    setSel: (k) => { sel = k; bandEls.forEach((el, n) => el.classList.toggle('sel', n === k)); draw(); },
+    setHover: (k) => { if (k !== hover) { hover = k; draw(); } },
+  });
 
   const specBtn = h('button', { class: 'tb sm spec' + (showSpec ? ' on' : ''), 'aria-pressed': String(showSpec), onclick: () => {
     showSpec = !showSpec;
@@ -157,11 +163,113 @@ function eqCard(p) {
       knob({ path: `${bp}.gain`, label: 'Ganho', min: -15, max: 15, def: 0, step: 0.5, unit: 'dB', cls: 'sm' }),
       knob({ path: `${bp}.q`, label: 'Q', min: 0.3, max: 10, def: 1.4, step: 0.1, log: true, cls: 'sm' }));
   });
+  const bandEls = bands;
   return card('Equalizador',
     h('div', { class: 'row' }, tbtn(`${p}.eq.on`, 'EQ'),
       h('button', { class: 'btn sm', onclick: () => [0, 1, 2, 3].forEach((b) => set(`${p}.eq.bands.${b}.gain`, 0)) }, 'Zerar'),
       specBtn),
-    cv, legend, h('div', { class: 'bands' }, bands));
+    cv, legend,
+    h('p', { class: 'hint' }, 'Arraste os pontos 1–4 no gráfico: para os lados muda a frequência, para cima/baixo o ganho. Pinça com dois dedos (ou roda do mouse) muda o Q. Toque duas vezes num ponto para zerar o ganho.'),
+    h('div', { class: 'bands' }, bands));
+}
+
+/** Arrastar as bandas direto no gráfico do EQ (mouse e toque). */
+function dragBands(cv, p, { setSel, setHover }) {
+  const B = (k) => `${p}.eq.bands.${k}`;
+  const geom = () => eqGeom(cv.clientWidth, cv.clientHeight);
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const hit = (x, y) => {
+    const eq = get(`${p}.eq`);
+    if (!eq.on) return -1;
+    const G = geom();
+    let best = -1, bd = 26;
+    eq.bands.forEach((b, k) => {
+      const d = Math.hypot(G.fx(b.freq) - x, G.fy(b.gain) - y);
+      if (d < bd) { bd = d; best = k; }
+    });
+    return best;
+  };
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const pts = new Map();
+  let drag = null, lastTap = { k: -1, t: 0 };
+
+  // Só bloqueia a rolagem da página quando o dedo começa em cima de um ponto (ou durante um arraste).
+  cv.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    const r = cv.getBoundingClientRect();
+    if (drag || hit(t.clientX - r.left, t.clientY - r.top) >= 0) e.preventDefault();
+  }, { passive: false });
+
+  cv.addEventListener('pointerdown', (e) => {
+    const [x, y] = pos(e);
+    pts.set(e.pointerId, [x, y]);
+    if (drag) {
+      // segundo dedo: pinça para o Q
+      if (pts.size === 2) {
+        const [a, b] = [...pts.values()];
+        drag.pinch = { d0: Math.max(10, Math.abs(a[0] - b[0])), q0: get(`${B(drag.k)}.q`) };
+      }
+      cv.setPointerCapture(e.pointerId);
+      return;
+    }
+    const k = hit(x, y);
+    if (k < 0) { pts.delete(e.pointerId); return; }
+    e.preventDefault();
+    cv.setPointerCapture(e.pointerId);
+    const G = geom();
+    const b = get(B(k));
+    drag = { k, id: e.pointerId, dx: G.fx(b.freq) - x, dy: G.fy(b.gain) - y, moved: false, x0: x, y0: y };
+    cv.classList.add('grabbing');
+    setSel(k);
+  });
+
+  cv.addEventListener('pointermove', (e) => {
+    const [x, y] = pos(e);
+    if (pts.has(e.pointerId)) pts.set(e.pointerId, [x, y]);
+    if (!drag) {
+      if (e.pointerType === 'mouse') { const k = hit(x, y); cv.style.cursor = k >= 0 ? 'grab' : ''; setHover(k); }
+      return;
+    }
+    if (drag.pinch && pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      const d = Math.max(10, Math.abs(a[0] - b[0]));
+      set(`${B(drag.k)}.q`, +clamp(drag.pinch.q0 * (drag.pinch.d0 / d), 0.3, 10).toFixed(1));
+      drag.moved = true;
+      return;
+    }
+    if (e.pointerId !== drag.id) return;
+    if (Math.hypot(x - drag.x0, y - drag.y0) > 3) drag.moved = true;
+    const G = geom();
+    set(`${B(drag.k)}.freq`, Math.round(clamp(G.xf(x + drag.dx), 20, 20000)));
+    set(`${B(drag.k)}.gain`, Math.round(clamp(G.yd(y + drag.dy), -15, 15) * 2) / 2);
+  });
+
+  const end = (e) => {
+    pts.delete(e.pointerId);
+    if (!drag) return;
+    if (drag.pinch && pts.size < 2) drag.pinch = null;
+    if (e.pointerId !== drag.id) return;
+    if (!drag.moved && e.type === 'pointerup') {
+      const now = performance.now();
+      if (lastTap.k === drag.k && now - lastTap.t < 320) { set(`${B(drag.k)}.gain`, 0); lastTap = { k: -1, t: 0 }; } else lastTap = { k: drag.k, t: now };
+    }
+    drag = null;
+    pts.clear();
+    cv.classList.remove('grabbing');
+    setSel(-1);
+  };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  cv.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !drag) { cv.style.cursor = ''; setHover(-1); } });
+
+  // roda do mouse em cima de um ponto: muda o Q
+  cv.addEventListener('wheel', (e) => {
+    const k = drag ? drag.k : hit(...pos(e));
+    if (k < 0) return;
+    e.preventDefault();
+    const q = get(`${B(k)}.q`);
+    set(`${B(k)}.q`, +clamp(q * (e.deltaY < 0 ? 1.1 : 1 / 1.1), 0.3, 10).toFixed(1));
+  }, { passive: false });
 }
 
 function compCurve(p) {

@@ -212,6 +212,8 @@ details.more summary { cursor: pointer; color: var(--muted); font-weight: 600; p
 
 /* ---------- canal ---------- */
 .eq-cv { width: 100%; height: 220px; background: radial-gradient(120% 90% at 50% 100%, #12161c, var(--bg)); border-radius: 8px; display: block; }
+.eq-cv.grabbing { cursor: grabbing !important; }
+.band.sel { box-shadow: inset 0 0 0 2px var(--accent); }
 .tb.spec.on { background: var(--spec); border-color: var(--spec); color: #00131d; }
 .eq-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin-top: -4px; }
 .lg::before { content: ''; display: inline-block; width: 14px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
