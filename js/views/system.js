@@ -55,7 +55,7 @@ export function renderSystem(root) {
         h('label', { class: 'fld' }, h('span', null, 'Modo'), selectBox('sys.mode', [['demo', 'Demonstração (sem mesa)'], ['axios', 'Mesa AXIOS (rede / Wi‑Fi)'], ['bridge', 'Ponte de rede (avançado)']])),
         hostRow, bridgeRow, httpsWarn,
         h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: () => { reconnect(); toast('Reconectando…'); } }, 'Aplicar / reconectar')),
-        h('p', { class: 'hint' }, 'No modo Mesa AXIOS, este aparelho fala direto com a mesa (porta 8088). Ligados à mesa: nomes, fader, mute, ganho, envios para os 8 retornos e medidores. O resto (EQ, gate, compressor, efeitos, DCA, rotas) por enquanto fica só no app. No modo demo nada sai do aparelho.')),
+        h('p', { class: 'hint' }, 'No modo Mesa AXIOS, este aparelho fala direto com a mesa (porta 8088). Ligados à mesa: nomes, fader, mute, ganho, envios e volume geral dos 8 retornos, MAIN e medidores. O resto (envios para efeitos, EQ, gate, compressor, efeitos, DCA, rotas) por enquanto fica só no app. No modo demo nada sai do aparelho.')),
       card('Rede do mixer',
         h('p', { class: 'hint' }, 'Por enquanto a rede da mesa é configurada na tela da própria mesa. Estes campos ficam só no app.'),
         h('div', { class: 'row' }, tbtn('sys.dhcp', 'Obter IP automaticamente (DHCP)')),

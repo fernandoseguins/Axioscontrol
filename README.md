@@ -4,7 +4,8 @@ Aplicativo web (PWA) para controlar o mixer digital **AXIOS DUON 24** pelo celul
 Foi inspirado no app do AXIOS 32 (`AX32 .25.12.30.03.APP`) e pode ser instalado na tela inicial como um app.
 
 > **Situação atual:** o app já conversa com a mesa de verdade (modo **Mesa AXIOS**) para nomes, fader, mute,
-> ganho, envios para os 8 retornos e medidores. EQ, gate, compressor, efeitos, DCA e rotas ainda ficam só no app.
+> ganho, envios e volume geral dos 8 retornos, MAIN e medidores. Envios para efeitos, EQ, gate, compressor,
+> efeitos, DCA e rotas ainda ficam só no app.
 > Veja [Usar com a mesa](#usar-com-a-mesa).
 
 ## Funções
@@ -80,10 +81,11 @@ Quadro binário: `0x80 · LEN · CMD · dados · CRC16` (CRC-16/MODBUS, byte alt
 | `0x00` / `0x39` | informações do aparelho / texto `CHAVE=valor` (DEVNAME, FW_VER…) |
 
 Canal *n* (0–25): bloco de 62 IDs a partir de `0x42`. Ganho `+6` (dB, 0–48), mute `+8`, fader `+10`,
-envios para os retornos 1–8 `+11…+18` (bit 15 preservado), envios para os efeitos 1–2 `+19/+20`.
+envios para os retornos 1–8 `+11…+18` (bit 15 preservado). `+19/+20` **não** são os envios de efeito
+(mexem em outro controle, L/R); os envios de efeito ainda não foram localizados.
 Escala de fader e envio: `valor = (dB + 120) × 10` (1200 = 0 dB, 0 = −∞).
-Masters dos retornos: `0x06F9 + k × 109` (*k* = 0–7; *k* = 8 provavelmente MAIN), ainda em teste.
-Medidores: IDs `0x02–0x0E` (canais) e `0x29–0x2F` (saídas), 1 byte por sinal.
+Masters dos retornos: `0x068C + k × 109` (*k* = 0–7) e MAIN `0x0A61`, testados na mesa.
+Medidores: IDs `0x01–0x0E` (canais; o canal *i* está no byte *i*−1 a partir do `0x02`) e `0x29–0x2F` (saídas, MAIN L/R no `0x2F`).
 O mapa fica em `js/axios-protocol.js`.
 
 ## Estrutura

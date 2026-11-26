@@ -8,7 +8,7 @@ export function renderFx(root) {
   for (let f = 0; f < CFG.FX; f++) grid.append(fxCard(f));
   root.append(h('div', { class: 'page' },
     h('div', { class: 'bar' }, h('h2', null, 'Efeitos'), h('p', { class: 'hint' }, '2 processadores estéreo. Envie os canais pelo Mixer (sends on faders) ou pela tela do canal.')),
-    linkNote('Os parâmetros dos efeitos ainda ficam só no app. Os envios dos canais para REVERBE e DLEY já vão para a mesa.'),
+    linkNote('Os efeitos e os envios para REVERBE/DLEY ainda ficam só no app.'),
     grid));
 }
 

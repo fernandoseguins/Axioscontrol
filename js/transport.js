@@ -157,7 +157,14 @@ class AxiosTransport {
         const id = (p[k] << 8) | p[k + 1];
         const v = (p[k + 2] << 8) | p[k + 3];
         const mi = AX.METER_CH_IDS.indexOf(id);
-        if (mi >= 0) { liveMeters.ch[mi * 2] = p[k + 2]; liveMeters.ch[mi * 2 + 1] = p[k + 3]; liveMeters.on = true; continue; }
+        if (mi >= 0) {
+          // byte alto do ID (0x01 + mi) = canal 2·mi − 1, byte baixo = canal 2·mi
+          const hi = 2 * mi - 1, lo = 2 * mi;
+          if (hi >= 0 && hi < AX.CH_COUNT) liveMeters.ch[hi] = p[k + 2];
+          if (lo < AX.CH_COUNT) liveMeters.ch[lo] = p[k + 3];
+          liveMeters.on = true;
+          continue;
+        }
         const bi = AX.METER_BUS_IDS.indexOf(id);
         if (bi >= 0) { liveMeters.bus[bi * 2] = p[k + 2]; liveMeters.bus[bi * 2 + 1] = p[k + 3]; continue; }
         const m = this.byId.get(id);
@@ -216,7 +223,7 @@ class AxiosTransport {
 }
 
 /** Paths que a mesa de verdade controla (o resto fica só no app). */
-export const LINKED = /^(ch\.\d+\.(fader|mute|gain|sends\.\d+\.level|fx\.[01])|aux\.\d+\.fader|main\.fader)$/;
+export const LINKED = /^(ch\.\d+\.(fader|mute|gain|sends\.\d+\.level)|aux\.\d+\.fader|main\.fader)$/;
 
 export function createTransport(sys, onMsg, api) {
   if (sys.mode === 'axios' && sys.host) return new AxiosTransport(sys.host.trim(), onMsg, api);

@@ -55,7 +55,7 @@ export function renderMixer(root) {
       h('div', { class: 'mx-top' }, layerBar, soloInd),
       h('div', { class: 'sof', role: 'group', 'aria-label': 'Sends on faders' }, h('span', { class: 'lbl' }, 'SENDS ON FADERS'), sofBtns),
       sofNote,
-      linkNote('Fader, mute e envios vão para a mesa. Pan, solo, DCA e mute groups ainda ficam só no app.'),
+      linkNote('Fader, mute e envios para os retornos vão para a mesa. Envios para FX, pan, solo, DCA e mute groups ainda ficam só no app.'),
       h('div', { class: 'mx-body' }, strips, masterStrip(sofKind, n)),
       mgBar));
 }

@@ -61,14 +61,16 @@ export const readFrame = (ids) => frame(CMD.READ, ids.flatMap(u16));
 export const CH_BASE = 0x42;
 export const CH_STRIDE = 0x3e; // 62 parâmetros por canal
 export const CH_COUNT = 26; // 24 canais + 2 entradas extras
-export const OFF = { gain: 0x06, mute: 0x08, fader: 0x0a, send: 0x0b, fx: 0x13 };
+export const OFF = { gain: 0x06, mute: 0x08, fader: 0x0a, send: 0x0b };
 export const chId = (i, off) => CH_BASE + i * CH_STRIDE + off;
-// Masters dos barramentos: 0–7 = mixes de retorno (AUX 1–8), 8 = provavelmente MAIN. A confirmar.
-export const busMasterId = (k) => 0x06f9 + k * 0x6d;
+// Masters: retornos AUX 1–8 = 0x068C + k×109 (confirmado na mesa); MAIN = 0x0A61 (confirmado).
+export const busMasterId = (k) => 0x068c + k * 0x6d;
+export const MAIN_ID = 0x0a61;
 // Índices dos nomes (comando 0x2E)
 export const NAME_IDX = { ch: 0, fx: 26, aux: 28 };
-// Medidores: 1 byte por sinal, 2 por parâmetro
-export const METER_CH_IDS = Array.from({ length: 13 }, (_, i) => 0x02 + i); // 26 canais
+// Medidores: 1 byte por sinal, 2 por parâmetro. Testado na mesa: o canal i está no byte i−1
+// a partir do ID 0x02 (o CH 1 vem no byte baixo do ID 0x01).
+export const METER_CH_IDS = Array.from({ length: 14 }, (_, i) => 0x01 + i);
 export const METER_BUS_IDS = Array.from({ length: 7 }, (_, i) => 0x29 + i); // 14 saídas
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -87,10 +89,10 @@ export function buildMap(nCh, nAux, nFx) {
     m.push({ path: `ch.${i}.mute`, id: chId(i, OFF.mute), ...bool });
     m.push({ path: `ch.${i}.gain`, id: chId(i, OFF.gain), ...gainC });
     for (let a = 0; a < Math.min(nAux, 8); a++) m.push({ path: `ch.${i}.sends.${a}.level`, id: chId(i, OFF.send + a), ...level });
-    for (let f = 0; f < Math.min(nFx, 2); f++) m.push({ path: `ch.${i}.fx.${f}`, id: chId(i, OFF.fx + f), ...level, exp: true });
+    // Envios para os efeitos: ainda não localizados (o +0x13 é outro controle, testado na mesa).
   }
-  for (let a = 0; a < Math.min(nAux, 8); a++) m.push({ path: `aux.${a}.fader`, id: busMasterId(a), ...level, exp: true });
-  m.push({ path: 'main.fader', id: busMasterId(8), ...level, exp: true });
+  for (let a = 0; a < Math.min(nAux, 8); a++) m.push({ path: `aux.${a}.fader`, id: busMasterId(a), ...level });
+  m.push({ path: 'main.fader', id: MAIN_ID, ...level });
   return m;
 }
 

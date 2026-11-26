@@ -32,9 +32,9 @@ export function renderChannel(root, [kind = 'ch', idx = '0']) {
   else if (kind === 'dca') dcaCards(body, i);
   else mainCards(body);
 
-  const note = kind === 'ch' ? 'Ligado à mesa: nome, ganho, fader, mute, envios para os retornos e para REVERBE/DLEY. EQ, HPF, gate, compressor, pan, +48V, fase e grupos ainda ficam só no app (o espectro é simulado).'
-    : kind === 'aux' ? 'Ligado à mesa: nome e volume geral do retorno (o volume geral ainda está em teste). O EQ gráfico fica só no app.'
-      : kind === 'main' ? 'Fader do MAIN em teste com a mesa. O EQ gráfico fica só no app.' : 'Os DCA ainda funcionam só no app.';
+  const note = kind === 'ch' ? 'Ligado à mesa: nome, ganho, fader, mute e envios para os retornos. Envios para os efeitos, EQ, HPF, gate, compressor, pan, +48V, fase e grupos ainda ficam só no app (o espectro é simulado).'
+    : kind === 'aux' ? 'Ligado à mesa: nome e volume geral do retorno. O EQ gráfico fica só no app.'
+      : kind === 'main' ? 'Fader do MAIN ligado à mesa. O EQ gráfico fica só no app.' : 'Os DCA ainda funcionam só no app.';
   root.append(h('div', { class: 'page' }, h('div', { class: 'bar' }, tabs, picker), linkNote(note), body));
 }
 
