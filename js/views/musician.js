@@ -35,7 +35,9 @@ export function renderMusician(root, [idx]) {
     if (!aux.mus.show[i]) continue;
     rows.push({ id: `c${i}`, name: get(`ch.${i}.name`), color: get(`ch.${i}.color`), path: `ch.${i}.sends.${a}.level`, num: i + 1 });
   }
-  if (aux.mus.fx) for (let f = 0; f < CFG.FX; f++) rows.push({ id: `f${f}`, name: get(`fx.${f}.type`), color: 'var(--fx)', path: `fx.${f}.aux.${a}`, num: `FX${f + 1}` });
+  const real = get('sys.mode') === 'axios';
+  // Na mesa real, o retorno dos efeitos nos mixes ainda não está mapeado: some daqui.
+  if (aux.mus.fx && !real) for (let f = 0; f < CFG.FX; f++) rows.push({ id: `f${f}`, name: get(`fx.${f}.type`), color: 'var(--fx)', path: `fx.${f}.aux.${a}`, num: `FX${f + 1}` });
   rows.sort((x, y) => isFav(y.id) - isFav(x.id));
 
   const list = h('div', { class: 'mus-list' }, rows.map((r) =>
@@ -55,7 +57,7 @@ export function renderMusician(root, [idx]) {
       h('div', null, h('small', null, 'MEU RETORNO'), title),
       h('button', { class: 'btn sm', onclick: () => exit() }, 'Sair')),
     h('div', { class: 'mus-master' },
-      h('div', { class: 'mus-h' }, h('b', null, 'Volume geral'), aux.mus.master ? tbtn(`${p}.mute`, 'MUTE', 'mute sm') : null),
+      h('div', { class: 'mus-h' }, h('b', null, 'Volume geral'), aux.mus.master && !real ? tbtn(`${p}.mute`, 'MUTE', 'mute sm') : null),
       aux.mus.master
         ? h('div', { class: 'mus-ctl' }, nudge(`${p}.fader`)[0], hslider({ path: `${p}.fader`, color: aux.color, cls: 'big' }), nudge(`${p}.fader`)[1])
         : h('p', { class: 'hint' }, 'O volume geral é controlado pelo técnico.'),

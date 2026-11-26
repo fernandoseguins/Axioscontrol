@@ -1,6 +1,6 @@
 import { get, set, watch, CFG, applyAll, snapshot, factoryReset, reconnect } from '../state.js';
 import { h, tbtn, textInput, selectBox, card, dialog, toast, download, pickJson } from '../ui.js';
-import { currentStatus, onStatus } from '../transport.js';
+import { currentStatus, onStatus, deviceInfo } from '../transport.js';
 import { onCleanup } from '../state.js';
 import { copy } from './channel.js';
 import { rerender } from '../nav.js';
@@ -21,11 +21,23 @@ export function renderSystem(root) {
   drawDhcp();
 
   const bridgeRow = h('label', { class: 'fld' }, h('span', null, 'Endereço da ponte'), textInput('sys.bridge', { maxlength: 80, placeholder: 'ws://192.168.1.100:8080' }));
-  const drawMode = () => bridgeRow.hidden = get('sys.mode') !== 'bridge';
+  const hostRow = h('label', { class: 'fld' }, h('span', null, 'Endereço (IP) da mesa'), textInput('sys.host', { maxlength: 60, placeholder: '10.0.0.119' }));
+  hostRow.querySelector('input').inputMode = 'decimal';
+  const httpsWarn = h('div', { class: 'warnbox' }, '⚠ Este app foi aberto por um endereço https:// (ex.: Netlify). O navegador bloqueia a conexão com a mesa a partir dele. Abra o app pelo computador da igreja: http://IP-DO-COMPUTADOR:8080');
+  const drawMode = () => {
+    const m = get('sys.mode');
+    bridgeRow.hidden = m !== 'bridge';
+    hostRow.hidden = m !== 'axios';
+    httpsWarn.hidden = !(m === 'axios' && location.protocol === 'https:');
+  };
   watch('sys.mode', drawMode);
   drawMode();
 
-  const base = `${location.origin}${location.pathname}#/musico/`;
+  const base = () => `${location.origin}${location.pathname}${get('sys.mode') === 'axios' ? '?mesa=' + encodeURIComponent(get('sys.host')) : ''}#/musico/`;
+  const fw = h('dd', null, deviceInfo.fw || '— (sem conexão)');
+  const devn = h('dd', null, deviceInfo.name || '—');
+  const infoTimer = setInterval(() => { fw.textContent = deviceInfo.fw || '— (sem conexão)'; devn.textContent = deviceInfo.name || '—'; }, 1000);
+  onCleanup(() => clearInterval(infoTimer));
 
   root.append(h('div', { class: 'page' },
     h('div', { class: 'bar' }, h('h2', null, 'Sistema')),
@@ -35,15 +47,17 @@ export function renderSystem(root) {
         h('dl', { class: 'info' },
           h('dt', null, 'Modelo'), h('dd', null, 'AXIOS DUON 24'),
           h('dt', null, 'Canais'), h('dd', null, `${CFG.CH} entradas · ${CFG.AUX} AUX · ${CFG.FX} FX · ${CFG.DCA} DCA`),
-          h('dt', null, 'Firmware'), h('dd', null, '— (sem conexão)'),
+          h('dt', null, 'Mesa'), devn,
+          h('dt', null, 'Firmware'), fw,
           h('dt', null, 'App'), h('dd', null, APP_VERSION))),
       card('Conexão com o mixer',
         h('div', { class: 'row' }, h('span', { class: 'k-l' }, 'Status'), st),
-        h('label', { class: 'fld' }, h('span', null, 'Modo'), selectBox('sys.mode', [['demo', 'Demonstração (sem mixer)'], ['bridge', 'Ponte de rede (WebSocket)']])),
-        bridgeRow,
+        h('label', { class: 'fld' }, h('span', null, 'Modo'), selectBox('sys.mode', [['demo', 'Demonstração (sem mesa)'], ['axios', 'Mesa AXIOS (rede / Wi‑Fi)'], ['bridge', 'Ponte de rede (avançado)']])),
+        hostRow, bridgeRow, httpsWarn,
         h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: () => { reconnect(); toast('Reconectando…'); } }, 'Aplicar / reconectar')),
-        h('p', { class: 'hint' }, 'O protocolo de comunicação da DUON 24 ainda não está implementado. No modo demo tudo funciona e fica salvo neste aparelho; abas abertas no mesmo navegador ficam sincronizadas.')),
+        h('p', { class: 'hint' }, 'No modo Mesa AXIOS, este aparelho fala direto com a mesa (porta 8088). Ligados à mesa: nomes, fader, mute, ganho, envios para os 8 retornos e medidores. O resto (EQ, gate, compressor, efeitos, DCA, rotas) por enquanto fica só no app. No modo demo nada sai do aparelho.')),
       card('Rede do mixer',
+        h('p', { class: 'hint' }, 'Por enquanto a rede da mesa é configurada na tela da própria mesa. Estes campos ficam só no app.'),
         h('div', { class: 'row' }, tbtn('sys.dhcp', 'Obter IP automaticamente (DHCP)')),
         ipFields,
         h('div', { class: 'k-l' }, 'Wi-Fi'),
@@ -62,7 +76,7 @@ export function renderSystem(root) {
           h('div', { class: 'link-r' },
             h('span', { class: 'dot', style: `--c:${get(`aux.${a}.color`)}` }),
             h('b', null, get(`aux.${a}.name`)),
-            h('button', { class: 'btn sm', onclick: () => copy(base + a) }, 'Copiar link'),
+            h('button', { class: 'btn sm', onclick: () => copy(base() + a) }, 'Copiar link'),
             h('a', { class: 'btn sm', href: `#/canal/aux/${a}` }, 'Permissões'))))),
       card('Backup e reset',
         h('div', { class: 'row wrap' },

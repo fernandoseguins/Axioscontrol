@@ -1,5 +1,5 @@
 import { get, set, watch, CFG, groupMuted } from '../state.js';
-import { h, vslider, knob, tbtn, meter, levelToMeter } from '../ui.js';
+import { h, vslider, knob, tbtn, meter, levelToMeter, linkNote } from '../ui.js';
 import { rerender } from '../nav.js';
 import { chPost, chSend, fxRet, fxSend, auxOut, mainOut } from '../levels.js';
 
@@ -55,6 +55,7 @@ export function renderMixer(root) {
       h('div', { class: 'mx-top' }, layerBar, soloInd),
       h('div', { class: 'sof', role: 'group', 'aria-label': 'Sends on faders' }, h('span', { class: 'lbl' }, 'SENDS ON FADERS'), sofBtns),
       sofNote,
+      linkNote('Fader, mute e envios vão para a mesa. Pan, solo, DCA e mute groups ainda ficam só no app.'),
       h('div', { class: 'mx-body' }, strips, masterStrip(sofKind, n)),
       mgBar));
 }

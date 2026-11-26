@@ -2,7 +2,7 @@
 // Todo valor é endereçado por um "path" com pontos, ex.: "ch.3.eq.bands.1.gain".
 import { createTransport } from './transport.js';
 
-export const CFG = { CH: 24, AUX: 8, FX: 4, DCA: 8, MG: 6, SCENES: 30, OUT: 12 };
+export const CFG = { CH: 24, AUX: 8, FX: 2, DCA: 8, MG: 6, SCENES: 30, OUT: 12 };
 
 export const COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#12a594', '#0090ff', '#8e4ec6', '#d6409f', '#8b8d98'];
 
@@ -39,7 +39,7 @@ const rep = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 const geq = () => ({ on: false, bands: rep(GEQ_FREQS.length, () => 0) });
 
 export function defaults() {
-  const fxTypes = ['Reverb Hall', 'Reverb Plate', 'Delay', 'Chorus'];
+  const fxTypes = ['Reverb Hall', 'Delay', 'Reverb Plate', 'Chorus'];
   return {
     v: 1,
     ch: rep(CFG.CH, (i) => ({
@@ -77,7 +77,7 @@ export function defaults() {
     scenes: rep(CFG.SCENES, () => null),
     curScene: -1,
     sys: {
-      name: 'DUON 24', mode: 'demo', bridge: 'ws://192.168.1.100:8080',
+      name: 'DUON 24', mode: 'demo', host: '10.0.0.119', bridge: 'ws://192.168.1.100:8080',
       dhcp: true, ip: '192.168.1.100', mask: '255.255.255.0', gw: '192.168.1.1',
       ssid: 'AXIOS-DUON24', wifiPass: '', adminPass: '', sceneLock: false,
     },
@@ -228,41 +228,15 @@ function onRemote(msg) {
   if (msg.t === 'set' && typeof msg.path === 'string') set(msg.path, msg.value, 'remote');
   else if (msg.t === 'all' && msg.state) applyAll(msg.state, 'remote');
 }
-export let transport = createTransport(state.sys, onRemote);
+export let transport = createTransport(state.sys, onRemote, { get, CFG });
 export function reconnect() {
   transport.close?.();
-  transport = createTransport(state.sys, onRemote);
+  transport = createTransport(state.sys, onRemote, { get, CFG });
 }
 
 // ---------- utilidades de áudio ----------
-const FPTS = [[0, -90], [0.0625, -60], [0.25, -30], [0.5, -10], [0.75, 0], [1, 10]];
-export function posToDb(p) {
-  if (p <= 0.002) return -Infinity;
-  for (let i = 1; i < FPTS.length; i++) {
-    const [x1, y1] = FPTS[i];
-    if (p <= x1) {
-      const [x0, y0] = FPTS[i - 1];
-      return y0 + ((p - x0) / (x1 - x0)) * (y1 - y0);
-    }
-  }
-  return 10;
-}
-export function dbToPos(db) {
-  if (db === -Infinity || db <= -90) return 0;
-  for (let i = 1; i < FPTS.length; i++) {
-    const [x1, y1] = FPTS[i];
-    if (db <= y1) {
-      const [x0, y0] = FPTS[i - 1];
-      return x0 + ((db - y0) / (y1 - y0)) * (x1 - x0);
-    }
-  }
-  return 1;
-}
-export function fmtDb(db) {
-  if (db === -Infinity) return '-∞';
-  const r = Math.round(db * 10) / 10;
-  return (r > 0 ? '+' : '') + r.toFixed(1);
-}
+import { posToDb, dbToPos, fmtDb } from './db.js';
+export { posToDb, dbToPos, fmtDb };
 export const fmtPos = (p) => fmtDb(posToDb(p));
 export function fmtHz(f) {
   return f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 1 : 2).replace(/\.?0+$/, '') + 'k' : Math.round(f) + '';

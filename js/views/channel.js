@@ -1,5 +1,5 @@
 import { get, set, watch, onCleanup, CFG, COLORS, GEQ_FREQS, partner } from '../state.js';
-import { h, vslider, hslider, knob, tbtn, selectBox, textInput, card, meter, levelToMeter, toast } from '../ui.js';
+import { h, vslider, hslider, knob, tbtn, selectBox, textInput, card, meter, levelToMeter, toast, linkNote } from '../ui.js';
 import { chIn, chPost, auxOut, mainOut } from '../levels.js';
 import { fmtPan } from './mixer.js';
 import { drawEq, eqGeom } from '../eq.js';
@@ -32,7 +32,10 @@ export function renderChannel(root, [kind = 'ch', idx = '0']) {
   else if (kind === 'dca') dcaCards(body, i);
   else mainCards(body);
 
-  root.append(h('div', { class: 'page' }, h('div', { class: 'bar' }, tabs, picker), body));
+  const note = kind === 'ch' ? 'Ligado à mesa: nome, ganho, fader, mute, envios para os retornos e para REVERBE/DLEY. EQ, HPF, gate, compressor, pan, +48V, fase e grupos ainda ficam só no app (o espectro é simulado).'
+    : kind === 'aux' ? 'Ligado à mesa: nome e volume geral do retorno (o volume geral ainda está em teste). O EQ gráfico fica só no app.'
+      : kind === 'main' ? 'Fader do MAIN em teste com a mesa. O EQ gráfico fica só no app.' : 'Os DCA ainda funcionam só no app.';
+  root.append(h('div', { class: 'page' }, h('div', { class: 'bar' }, tabs, picker), linkNote(note), body));
 }
 
 function nameColor(p, maxlength = 12) {
@@ -57,7 +60,7 @@ function channelCards(body, i) {
     card('Entrada',
       ...nameColor(p),
       h('div', { class: 'row' },
-        knob({ path: `${p}.gain`, label: 'Ganho', min: 0, max: 60, def: 20, step: 0.5, unit: 'dB' }),
+        knob({ path: `${p}.gain`, label: 'Ganho', min: 0, max: 48, def: 20, step: 1, unit: 'dB' }),
         h('div', { class: 'col' },
           tbtn(`${p}.phantom`, '+48V', 'warn'),
           tbtn(`${p}.phase`, 'Ø FASE'),

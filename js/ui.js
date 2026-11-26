@@ -310,3 +310,12 @@ export function pickJson() {
     i.click();
   });
 }
+
+/** Aviso que só aparece quando o app está ligado à mesa de verdade. */
+export function linkNote(text) {
+  const el = h('div', { class: 'linkbox' }, '🔗 ', text);
+  const draw = () => { el.hidden = get('sys.mode') !== 'axios'; };
+  watch('sys.mode', draw);
+  draw();
+  return el;
+}

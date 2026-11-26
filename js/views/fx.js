@@ -1,5 +1,5 @@
 import { get, set, CFG, FX_TYPES, fxDefaults } from '../state.js';
-import { h, knob, tbtn, hslider, meter, levelToMeter, card } from '../ui.js';
+import { h, knob, tbtn, hslider, meter, levelToMeter, card, linkNote } from '../ui.js';
 import { fxRet } from '../levels.js';
 import { rerender } from '../nav.js';
 
@@ -7,7 +7,8 @@ export function renderFx(root) {
   const grid = h('div', { class: 'grid' });
   for (let f = 0; f < CFG.FX; f++) grid.append(fxCard(f));
   root.append(h('div', { class: 'page' },
-    h('div', { class: 'bar' }, h('h2', null, 'Efeitos'), h('p', { class: 'hint' }, '4 processadores estéreo. Envie os canais pelo Mixer (sends on faders) ou pela tela do canal.')),
+    h('div', { class: 'bar' }, h('h2', null, 'Efeitos'), h('p', { class: 'hint' }, '2 processadores estéreo. Envie os canais pelo Mixer (sends on faders) ou pela tela do canal.')),
+    linkNote('Os parâmetros dos efeitos ainda ficam só no app. Os envios dos canais para REVERBE e DLEY já vão para a mesa.'),
     grid));
 }
 

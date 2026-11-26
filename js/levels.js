@@ -1,6 +1,8 @@
 // Níveis simulados para os medidores no modo demo.
 import { get, posToDb, groupMuted, dcaDb, CFG } from './state.js';
 import { sig, dbLin } from './ui.js';
+import { liveMeters } from './transport.js';
+import { meterLin } from './axios-protocol.js';
 
 function srcSignal(i) {
   const s = get(`routing.in.${i}`);
@@ -11,9 +13,10 @@ function srcSignal(i) {
   if (s === 'GERADOR') return get('gen.on') ? dbLin(get('gen.level')) : 0;
   return 0;
 }
-export const chIn = (i) => srcSignal(i) * dbLin(get(`ch.${i}.gain`) - 30);
+export const chIn = (i) => (liveMeters.on ? meterLin(liveMeters.ch[i]) : srcSignal(i) * dbLin(get(`ch.${i}.gain`) - 30));
 export function chPost(i) {
   const c = get(`ch.${i}`);
+  if (liveMeters.on) return c.mute ? 0 : meterLin(liveMeters.ch[i]) * dbLin(posToDb(c.fader));
   if (c.mute || groupMuted(i)) return 0;
   return chIn(i) * dbLin(posToDb(c.fader) + dcaDb(i));
 }
@@ -28,6 +31,7 @@ function fxIn(f) {
   return Math.sqrt(sum) * 0.7;
 }
 export function fxRet(f) {
+  if (liveMeters.on) return meterLin(liveMeters.bus[8 + f]);
   const x = get(`fx.${f}`);
   return x.mute ? 0 : fxIn(f) * dbLin(posToDb(x.ret));
 }
@@ -36,6 +40,7 @@ export function fxSend(f, a) {
   return x.mute ? 0 : fxIn(f) * dbLin(posToDb(x.aux[a]));
 }
 export function auxOut(a) {
+  if (liveMeters.on) return meterLin(liveMeters.bus[a]);
   const x = get(`aux.${a}`);
   if (x.mute) return 0;
   let sum = 0;
@@ -46,6 +51,7 @@ export function auxOut(a) {
   return (Math.sqrt(sum) * 0.6 + g) * dbLin(posToDb(x.fader));
 }
 export function mainOut(side = 0) {
+  if (liveMeters.on) return meterLin(liveMeters.bus[12 + side]);
   const m = get('main');
   if (m.mute) return 0;
   let sum = 0;

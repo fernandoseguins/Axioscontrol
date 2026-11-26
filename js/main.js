@@ -1,4 +1,4 @@
-import { newScope, subscribe, get, watch } from './state.js';
+import { newScope, subscribe, get, set, watch, reconnect } from './state.js';
 import { onStatus, currentStatus } from './transport.js';
 import { setRerender } from './nav.js';
 import { renderMixer } from './views/mixer.js';
@@ -46,9 +46,32 @@ function scopeHeader() {
   draw();
 }
 
+// Link do músico / do técnico: ?mesa=IP já liga ao modo Mesa AXIOS
+const qs = new URLSearchParams(location.search);
+if (qs.get('mesa')) {
+  const host = qs.get('mesa').trim();
+  if (/^[\w.-]{1,60}$/.test(host) && (get('sys.mode') !== 'axios' || get('sys.host') !== host)) {
+    set('sys.host', host);
+    set('sys.mode', 'axios');
+    reconnect();
+  }
+}
+
 setRerender(route);
 window.addEventListener('hashchange', route);
 subscribe((p) => { if (p === '*') route(); });
+// Nomes que chegam da mesa: redesenha a tela (sem atrapalhar quem está digitando).
+let nameTimer = 0;
+subscribe((p) => {
+  if (!/^(ch|aux)\.\d+\.name$/.test(p)) return;
+  clearTimeout(nameTimer);
+  nameTimer = setTimeout(() => {
+    const a = document.activeElement;
+    if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+    if (document.querySelector('dialog[open]') || document.querySelector('.active')) return;
+    route();
+  }, 400);
+});
 
 const pill = document.getElementById('status');
 const drawStatus = (s) => { pill.textContent = s.text; pill.dataset.state = s.state; };
